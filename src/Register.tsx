@@ -1,93 +1,73 @@
-//Make students do this
 import React, { useState, ChangeEvent, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { createUserWithEmailAndPassword, sendEmailVerification, signOut } from "firebase/auth";
 import { auth } from './firebase';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
-interface RegisterProps { }
-
-const Register: React.FC<RegisterProps> = () => {
+const Register: React.FC = () => {
     const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
-    const navigate = useNavigate()
+    const navigate = useNavigate();
 
     useEffect(() => {
-    const checkToken = () => {
-       const userToken = localStorage.getItem("token");
-       if (userToken){
-        navigate("/dashboard")
-       }
-       else {
-           console.log("User is not valid")
-           navigate("/")
-       }
-    }
-    checkToken()
-   }, [])
+        const userToken = localStorage.getItem("token");
+        if (userToken) {
+            navigate("/dashboard");
+        }
+        // If no token, we do NOTHING. We want the user to stay on this page to register!
+    }, [navigate]);
 
-    const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
-        setEmail(e.target.value);
-    };
-
-    const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
-        setPassword(e.target.value);
-    };
-
-    const handleLogin = async () => {
-        // console.log('Logging in with:', { email, password });
+    const handleRegister = async () => {
         try {
-            await createUserWithEmailAndPassword(auth, email, password)
-                .then((userData) => {
-                    if (userData.user.uid) {
-                        sendEmailVerification((userData.user))
-                        alert("Registration Success")
-                        signOut(auth);
-                        navigate("/")
-                    }
-                })
-        } catch (error:any) {
-            console.log("Error msg: ", error.message)
-            alert(error.message)
+            const userData = await createUserWithEmailAndPassword(auth, email, password);
+            
+            if (userData.user) {
+                await sendEmailVerification(userData.user);
+                alert("Registration Successful! Please check your email for verification.");
+                
+                // Sign out immediately so they have to log in manually
+                await signOut(auth);
+                navigate("/");
+            }
+        } catch (error: any) {
+            console.error("Registration Error:", error.message);
+            alert(error.message);
         }
     };
 
     return (
         <div className="container d-flex justify-content-center align-items-center vh-100">
-            <div className="card p-4">
+            <div className="card p-4 shadow-sm" style={{ width: '400px' }}>
                 <h3 className="card-title text-center mb-4">Register</h3>
                 <form>
                     <div className="mb-3">
-                        <label htmlFor="username" className="form-label">
-                            Email
-                        </label>
+                        <label className="form-label">Email</label>
                         <input
                             type="email"
                             className="form-control"
-                            id="email"
                             value={email}
-                            onChange={handleEmailChange}
+                            onChange={(e) => setEmail(e.target.value)}
                         />
                     </div>
                     <div className="mb-3">
-                        <label htmlFor="password" className="form-label">
-                            Password
-                        </label>
+                        <label className="form-label">Password</label>
                         <input
                             type="password"
                             className="form-control"
-                            id="password"
                             value={password}
-                            onChange={handlePasswordChange}
+                            onChange={(e) => setPassword(e.target.value)}
                         />
                     </div>
-                    <div className="text-center">
-                        <button type="button" className="btn btn-primary" onClick={handleLogin}>
+                    <div className="text-center d-grid">
+                        <button type="button" className="btn btn-primary" onClick={handleRegister}>
                             Register
                         </button>
                     </div>
+                    <div className="mt-3 text-center">
+                        <span>Already have an account? </span>
+                        <Link to="/">Login</Link>
+                    </div>
                 </form>
-                <h3 className='d-flex justify-content-center align-items-center'><a href="/">Login</a></h3>
             </div>
         </div>
     );
